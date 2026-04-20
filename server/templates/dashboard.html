@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}Gösterge Paneli{% endblock %}
+{% block page_title %}Gösterge Paneli{% endblock %}
+
+{% block content %}
+<!-- Kill Switch Alert -->
+{% if kill_switch %}
+<div class="alert alert-danger">
+    <i class="fas fa-power-off"></i>
+    <strong>Kill-Switch AKTİF!</strong> Tüm ağdaki engelleme motoru şu anda devre dışı.
+    <a href="{{ url_for('admin.settings') }}" class="alert-link">Ayarlardan kapatın →</a>
+</div>
+{% endif %}
+
+<!-- Filter Section -->
+<div class="card filter-card" style="margin-bottom: 20px;">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin.dashboard') }}" class="filter-form">
+            <div class="filter-group">
+                <label for="hostname"><i class="fas fa-desktop"></i> Cihaz/Sınıf Adı</label>
+                <input type="text" id="hostname" name="hostname" class="form-input" placeholder="Örn: 8A veya Lab1" value="{{ filters.hostname or '' }}">
+            </div>
+            <div class="filter-group">
+                <label for="date_from"><i class="fas fa-calendar-alt"></i> Başlangıç</label>
+                <input type="date" id="date_from" name="date_from" class="form-input" value="{{ filters.date_from or '' }}">
+            </div>
+            <div class="filter-group">
+                <label for="date_to"><i class="fas fa-calendar-alt"></i> Bitiş</label>
+                <input type="date" id="date_to" name="date_to" class="form-input" value="{{ filters.date_to or '' }}">
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrele</button>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary"><i class="fas fa-times"></i> Sıfırla</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Filter Form Styles */
+    .filter-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+    }
+    .filter-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: flex-end;
+    }
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 200px;
+    }
+    .filter-group label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 5px;
+    }
+    .filter-group input {
+        background: var(--bg-dark);
+        border: 1px solid var(--border-color);
+        color: var(--text-light);
+        padding: 8px 12px;
+        border-radius: var(--radius-md);
+        font-family: inherit;
+    }
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+    }
+    .filter-actions .btn {
+        padding: 8px 15px;
+        height: 37px;
+    }
+    .filter-actions .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-light);
+    }
+    .filter-actions .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Ranking Actions */
+    .ranking-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .btn-icon {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-icon:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-light);
+    }
+    .btn-icon.btn-danger:hover {
+        background: var(--danger-color);
+        color: white;
+    }
+</style>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card stat-card--primary" id="stat-total-logs">
+        <div class="stat-icon"><i class="fas fa-database"></i></div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.total_logs | default(0) }}</span>
+            <span class="stat-label">Toplam Log</span>
+        </div>
+    </div>
+    <div class="stat-card stat-card--success" id="stat-today-logs">
+        <div class="stat-icon"><i class="fas fa-calendar-day"></i></div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.today_logs | default(0) }}</span>
+            <span class="stat-label">Bugünkü Log</span>
+        </div>
+    </div>
+    <div class="stat-card stat-card--info" id="stat-active-clients">
+        <div class="stat-icon"><i class="fas fa-desktop"></i></div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.active_clients | default(0) }}</span>
+            <span class="stat-label">Aktif Cihaz</span>
+        </div>
+    </div>
+    <div class="stat-card stat-card--warning" id="stat-youtube-logs">
+        <div class="stat-icon"><i class="fab fa-youtube"></i></div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.youtube_logs | default(0) }}</span>
+            <span class="stat-label">YouTube Log</span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts & Lists Row -->
+<div class="dashboard-grid">
+    <!-- Top Sites -->
+    <div class="card" id="top-sites-card">
+        <div class="card-header">
+            <h3><i class="fas fa-globe"></i> En Çok Ziyaret Edilen Siteler</h3>
+            <span class="card-badge">
+                {% if filters.date_from or filters.date_to or filters.hostname %}
+                    Filtrelenmiş Veri
+                {% else %}
+                    Son 7 Gün
+                {% endif %}
+            </span>
+        </div>
+        <div class="card-body">
+            {% if top_sites %}
+            <div class="ranking-list">
+                {% for site in top_sites %}
+                <div class="ranking-item">
+                    <span class="ranking-pos">{{ loop.index }}</span>
+                    <span class="ranking-label" title="{{ site.url }}">{{ site.url | truncate(50) }}</span>
+                    <span class="ranking-value">{{ site.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state">Henüz veri yok</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Top Videos -->
+    <div class="card" id="top-videos-card">
+        <div class="card-header">
+            <h3><i class="fab fa-youtube"></i> En Çok İzlenen Videolar</h3>
+            <span class="card-badge">
+                {% if filters.date_from or filters.date_to or filters.hostname %}
+                    Filtrelenmiş Veri
+                {% else %}
+                    Son 7 Gün
+                {% endif %}
+            </span>
+        </div>
+        <div class="card-body">
+            {% if top_videos %}
+            <div class="ranking-list">
+                {% for video in top_videos %}
+                <div class="ranking-item">
+                    <span class="ranking-pos">{{ loop.index }}</span>
+                    <div class="ranking-info">
+                        <a href="https://www.youtube.com/watch?v={{ video.video_id }}" target="_blank" class="ranking-label" title="{{ video.title }}">{{ video.title | default('Başlıksız') | truncate(45) }}</a>
+                        <span class="ranking-sub">{{ video.channel_name | default('Bilinmeyen Kanal') }}</span>
+                    </div>
+                    <div class="ranking-actions">
+                        <span class="ranking-value">{{ video.count }}</span>
+                        <button class="btn-icon btn-danger block-video-btn" 
+                                data-id="{{ video.video_id }}" 
+                                data-title="{{ video.title }}"
+                                title="Videoyu Engelle">
+                            <i class="fas fa-ban"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state">Henüz veri yok</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Top Channels -->
+    <div class="card" id="top-channels-card">
+        <div class="card-header">
+            <h3><i class="fas fa-tv"></i> En Çok İzlenen Kanallar</h3>
+            <span class="card-badge">
+                {% if filters.date_from or filters.date_to or filters.hostname %}
+                    Filtrelenmiş Veri
+                {% else %}
+                    Son 7 Gün
+                {% endif %}
+            </span>
+        </div>
+        <div class="card-body">
+            {% if top_channels %}
+            <div class="ranking-list">
+                {% for channel in top_channels %}
+                <div class="ranking-item">
+                    <span class="ranking-pos">{{ loop.index }}</span>
+                    <div class="ranking-info">
+                        <a href="https://www.youtube.com/channel/{{ channel.channel_id }}" target="_blank" class="ranking-label" title="{{ channel.channel_name }}">{{ channel.channel_name | default('Bilinmeyen Kanal') | truncate(45) }}</a>
+                    </div>
+                    <span class="ranking-value">{{ channel.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state">Henüz veri yok</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Active Clients -->
+    <div class="card" id="active-clients-card">
+        <div class="card-header">
+            <h3><i class="fas fa-network-wired"></i> Aktif Cihazlar</h3>
+            <span class="card-badge">Son 30 dk</span>
+        </div>
+        <div class="card-body">
+            {% if active_clients %}
+            <div class="client-list">
+                {% for client in active_clients %}
+                <div class="client-item">
+                    <div class="client-status online"></div>
+                    <div class="client-info">
+                        <span class="client-ip">{{ client.client_ip }}</span>
+                        <span class="client-hostname">{{ client.hostname | default('Bilinmiyor') }}</span>
+                    </div>
+                    <span class="client-logs">{{ client.log_count }} log</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state">Aktif cihaz yok</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- DB Stats -->
+    <div class="card" id="db-stats-card">
+        <div class="card-header">
+            <h3><i class="fas fa-hdd"></i> Veritabanı Durumu</h3>
+        </div>
+        <div class="card-body">
+            <div class="db-stats-grid">
+                <div class="db-stat">
+                    <span class="db-stat-value">{{ db_stats.log_entries | default(0) }}</span>
+                    <span class="db-stat-label">Log Kaydı</span>
+                </div>
+                <div class="db-stat">
+                    <span class="db-stat-value">{{ db_stats.blocked_items | default(0) }}</span>
+                    <span class="db-stat-label">Engellenen</span>
+                </div>
+                <div class="db-stat">
+                    <span class="db-stat-value">{{ db_stats.whitelisted_items | default(0) }}</span>
+                    <span class="db-stat-label">Beyaz Liste</span>
+                </div>
+                <div class="db-stat">
+                    <span class="db-stat-value">{{ db_stats.db_size_mb | default(0) }} MB</span>
+                    <span class="db-stat-label">DB Boyutu</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.block-video-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        const videoId = this.getAttribute('data-id');
+        const title = this.getAttribute('data-title');
+        
+        if (!confirm(`'${title}' isimli videoyu engellemek istediğinize emin misiniz?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch("{{ url_for('admin.api_block_video') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ video_id: videoId, title: title })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                alert("Video başarıyla engellendi. Eklentiler bir sonraki senkronizasyonda güncellenecektir.");
+                // Change icon to checkmark
+                this.innerHTML = '<i class="fas fa-check"></i>';
+                this.disabled = true;
+                this.classList.remove('btn-danger');
+                this.style.color = '#4bb543';
+            } else {
+                alert("Hata: " + result.message);
+            }
+        } catch (error) {
+            console.error("Engelleme hatası:", error);
+            alert("İşlem sırasında bir hata oluştu.");
+        }
+    });
+});
+</script>
+{% endblock %}

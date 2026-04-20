@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Beyaz Liste{% endblock %}
+{% block page_title %}Beyaz Liste Yönetimi{% endblock %}
+{% block content %}
+<div class="card" id="whitelist-add-card">
+    <div class="card-header"><h3><i class="fas fa-plus-circle"></i> Yeni Beyaz Liste Kaydı</h3></div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.whitelist_add') }}" class="add-form" id="whitelist-add-form">
+            <div class="form-row">
+                <div class="form-group flex-2">
+                    <label for="wl-pattern">Kalıp / Değer</label>
+                    <input type="text" id="wl-pattern" name="pattern" required placeholder="Eğitim kanalı ID, URL veya anahtar kelime">
+                </div>
+                <div class="form-group">
+                    <label for="wl-type">Tür</label>
+                    <select id="wl-type" name="whitelist_type">
+                        <option value="channel_id">Kanal ID</option>
+                        <option value="channel_name">Kanal Adı</option>
+                        <option value="url">URL</option>
+                        <option value="keyword">Anahtar Kelime</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="wl-description">Açıklama</label>
+                    <input type="text" id="wl-description" name="description" placeholder="Ör: MEB eğitim kanalı">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-success" id="whitelist-add-btn"><i class="fas fa-check"></i> Ekle</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-check-circle"></i> Beyaz Liste</h3><span class="card-badge">{{ items | length }} öğe</span></div>
+    <div class="card-body table-responsive">
+        {% if items %}
+        <table class="data-table" id="whitelist-table">
+            <thead><tr><th>Kalıp</th><th>Tür</th><th>Açıklama</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr></thead>
+            <tbody>
+                {% for item in items %}
+                <tr class="{% if not item.is_active %}row-inactive{% endif %}">
+                    <td><code>{{ item.pattern }}</code></td>
+                    <td><span class="badge badge--success">{{ item.whitelist_type }}</span></td>
+                    <td>{{ item.description | default('-') }}</td>
+                    <td>{% if item.is_active %}<span class="status-dot status-active"></span>Aktif{% else %}<span class="status-dot status-inactive"></span>Pasif{% endif %}</td>
+                    <td>{{ item.created_at.strftime('%d.%m.%Y') if item.created_at else '-' }}</td>
+                    <td class="td-actions">
+                        <form method="POST" action="{{ url_for('admin.whitelist_toggle', item_id=item.id) }}" class="inline-form"><button type="submit" class="btn btn-sm btn-secondary"><i class="fas fa-toggle-{{ 'on' if item.is_active else 'off' }}"></i></button></form>
+                        <form method="POST" action="{{ url_for('admin.whitelist_delete', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Silmek istediğinize emin misiniz?')"><button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button></form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state"><i class="fas fa-graduation-cap"></i> Beyaz liste boş. Eğitim kanallarını ekleyin.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

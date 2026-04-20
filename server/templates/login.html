@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Giriş{% endblock %}
+
+{% block auth_content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="NetKalkan Logo" class="login-logo">
+            <h1>NetKalkan</h1>
+            <p class="login-subtitle">Ağ Güvenliği Yönetim Paneli</p>
+        </div>
+        <form method="POST" class="login-form" id="login-form">
+            <div class="form-group">
+                <label for="username"><i class="fas fa-user"></i> Kullanıcı Adı</label>
+                <input type="text" id="username" name="username" required autocomplete="username" placeholder="Kullanıcı adınızı girin">
+            </div>
+            <div class="form-group">
+                <label for="password"><i class="fas fa-lock"></i> Şifre</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Şifrenizi girin">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="login-btn">
+                <i class="fas fa-sign-in-alt"></i> Giriş Yap
+            </button>
+        </form>
+        <div class="login-footer">
+            <p><i class="fas fa-shield-alt"></i> Yerel ağ güvenlik sistemi</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

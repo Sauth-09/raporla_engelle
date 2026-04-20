@@ -1,0 +1,30 @@
+# NetKalkan - Git Ignore Rules
+
+# Environments
+server/venv/
+.env
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local Database & User Data (CRITICAL: Protect personal data)
+server/*.db
+server/instance/
+*.log
+
+# Build & Portable Distribution
+dist/
+build/
+*.spec
+bin/
+obj/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Extension builds
+extension/*.crx
+extension/deploy/*.zip

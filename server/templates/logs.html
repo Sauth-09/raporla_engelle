@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Log Kayıtları{% endblock %}
+{% block page_title %}Log Kayıtları{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card filter-card" id="log-filters">
+    <form method="GET" class="filter-form">
+        <div class="filter-row">
+            <div class="form-group">
+                <label for="search">Arama</label>
+                <input type="text" id="search" name="search" value="{{ filters.get('search', '') }}" placeholder="URL, başlık veya kanal adı...">
+            </div>
+            <div class="form-group">
+                <label for="log_type">Tür</label>
+                <select id="log_type" name="log_type">
+                    <option value="">Tümü</option>
+                    <option value="page_visit" {% if filters.get('log_type') == 'page_visit' %}selected{% endif %}>Sayfa Ziyareti</option>
+                    <option value="youtube_video" {% if filters.get('log_type') == 'youtube_video' %}selected{% endif %}>YouTube Video</option>
+                    <option value="heartbeat" {% if filters.get('log_type') == 'heartbeat' %}selected{% endif %}>Heartbeat</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="client_ip">Cihaz IP</label>
+                <input type="text" id="client_ip" name="client_ip" value="{{ filters.get('client_ip', '') }}" placeholder="192.168.x.x">
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary" id="apply-filters-btn">
+                    <i class="fas fa-search"></i> Filtrele
+                </button>
+                <a href="{{ url_for('admin.logs') }}" class="btn btn-secondary" id="clear-filters-btn">
+                    <i class="fas fa-times"></i> Temizle
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Logs Table -->
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-list-alt"></i> Kayıtlar</h3>
+        <span class="card-badge">{{ pagination.total | default(0) }} toplam</span>
+    </div>
+    <div class="card-body table-responsive">
+        {% if logs %}
+        <table class="data-table" id="logs-table">
+            <thead>
+                <tr>
+                    <th>Zaman</th>
+                    <th>Tür</th>
+                    <th>URL / Başlık</th>
+                    <th>Kanal</th>
+                    <th>Cihaz IP</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="td-time">
+                        <span class="time-primary">{{ log.timestamp.strftime('%d.%m.%Y') if log.timestamp else '-' }}</span>
+                        <span class="time-secondary">{{ log.timestamp.strftime('%H:%M') if log.timestamp else '' }}</span>
+                    </td>
+                    <td>
+                        {% if log.log_type == 'youtube_video' %}
+                        <span class="badge badge--youtube"><i class="fab fa-youtube"></i> Video</span>
+                        {% elif log.log_type == 'heartbeat' %}
+                        <span class="badge badge--info"><i class="fas fa-heartbeat"></i> HB</span>
+                        {% else %}
+                        <span class="badge badge--default"><i class="fas fa-globe"></i> Sayfa</span>
+                        {% endif %}
+                    </td>
+                    <td class="td-url">
+                        <span class="log-title" title="{{ log.title }}">{{ log.title | default('') | truncate(50) }}</span>
+                        <a href="{{ log.url }}" target="_blank" class="log-url" title="{{ log.url }}">{{ log.url | truncate(60) }}</a>
+                    </td>
+                    <td>{{ log.channel_name | default('-') }}</td>
+                    <td><code>{{ log.client_ip }}</code></td>
+                    <td>
+                        {% if log.video_id %}
+                        <form method="POST" action="{{ url_for('admin.blocklist_add') }}" class="inline-form">
+                            <input type="hidden" name="pattern" value="{{ log.video_id }}">
+                            <input type="hidden" name="block_type" value="video_id">
+                            <input type="hidden" name="description" value="Logdan engellendi: {{ log.title | default('') | truncate(30) }}">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Bu videoyu engelle">
+                                <i class="fas fa-ban"></i>
+                            </button>
+                        </form>
+                        {% elif log.channel_id %}
+                        <form method="POST" action="{{ url_for('admin.blocklist_add') }}" class="inline-form">
+                            <input type="hidden" name="pattern" value="{{ log.channel_id }}">
+                            <input type="hidden" name="block_type" value="channel_id">
+                            <input type="hidden" name="description" value="Logdan engellendi: {{ log.channel_name | default('') | truncate(30) }}">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Bu kanalı engelle">
+                                <i class="fas fa-ban"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav class="pagination-nav" aria-label="Log sayfaları">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('admin.logs', page=pagination.prev_num, **filters) }}" class="btn btn-sm btn-secondary">&laquo; Önceki</a>
+            {% endif %}
+            <span class="pagination-info">Sayfa {{ pagination.page }} / {{ pagination.pages }}</span>
+            {% if pagination.has_next %}
+            <a href="{{ url_for('admin.logs', page=pagination.next_num, **filters) }}" class="btn btn-sm btn-secondary">Sonraki &raquo;</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <p class="empty-state"><i class="fas fa-inbox"></i> Henüz log kaydı yok.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

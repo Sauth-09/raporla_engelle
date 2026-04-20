@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Kara Liste{% endblock %}
+{% block page_title %}Kara Liste Yönetimi{% endblock %}
+{% block content %}
+<div class="card" id="blocklist-add-card">
+    <div class="card-header"><h3><i class="fas fa-plus-circle"></i> Yeni Engelleme Ekle</h3></div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.blocklist_add') }}" class="add-form" id="blocklist-add-form">
+            <div class="form-row">
+                <div class="form-group flex-2">
+                    <label for="bl-pattern">Kalıp / Değer</label>
+                    <input type="text" id="bl-pattern" name="pattern" required placeholder="URL, kanal ID, video ID veya anahtar kelime">
+                </div>
+                <div class="form-group">
+                    <label for="bl-block-type">Tür</label>
+                    <select id="bl-block-type" name="block_type">
+                        <option value="keyword">Anahtar Kelime</option>
+                        <option value="url">URL</option>
+                        <option value="channel_id">Kanal ID</option>
+                        <option value="channel_name">Kanal Adı</option>
+                        <option value="video_id">Video ID</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="bl-description">Açıklama</label>
+                    <input type="text" id="bl-description" name="description" placeholder="Opsiyonel">
+                </div>
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label"><input type="checkbox" id="bl-is-regex" name="is_regex"><span>Regex</span></label>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-danger" id="blocklist-add-btn"><i class="fas fa-ban"></i> Engelle</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-ban"></i> Engellenen Öğeler</h3><span class="card-badge">{{ items | length }} öğe</span></div>
+    <div class="card-body table-responsive">
+        {% if items %}
+        <table class="data-table" id="blocklist-table">
+            <thead><tr><th>Kalıp</th><th>Tür</th><th>Regex</th><th>Açıklama</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr></thead>
+            <tbody>
+                {% for item in items %}
+                <tr class="{% if not item.is_active %}row-inactive{% endif %}">
+                    <td><code>{{ item.pattern }}</code></td>
+                    <td><span class="badge badge--type">{{ item.block_type }}</span></td>
+                    <td>{% if item.is_regex %}<span class="badge badge--regex">✓</span>{% else %}-{% endif %}</td>
+                    <td>{{ item.description | default('-') }}</td>
+                    <td>{% if item.is_active %}<span class="status-dot status-active"></span>Aktif{% else %}<span class="status-dot status-inactive"></span>Pasif{% endif %}</td>
+                    <td>{{ item.created_at.strftime('%d.%m.%Y') if item.created_at else '-' }}</td>
+                    <td class="td-actions">
+                        <form method="POST" action="{{ url_for('admin.blocklist_toggle', item_id=item.id) }}" class="inline-form"><button type="submit" class="btn btn-sm btn-secondary" title="Değiştir"><i class="fas fa-toggle-{{ 'on' if item.is_active else 'off' }}"></i></button></form>
+                        <form method="POST" action="{{ url_for('admin.blocklist_delete', item_id=item.id) }}" class="inline-form" onsubmit="return confirm('Silmek istediğinize emin misiniz?')"><button type="submit" class="btn btn-sm btn-danger" title="Sil"><i class="fas fa-trash"></i></button></form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state"><i class="fas fa-check-circle"></i> Kara liste boş.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

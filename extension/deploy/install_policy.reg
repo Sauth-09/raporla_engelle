@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist]
+"1"="abcdefghijklmnopabcdefghijklmnop;http://192.168.1.100:5000/api/extension/update.xml"
+
+; NOT: 'abcdefghijklmnopabcdefghijklmnop' yerine paketlenmiş CRX dosyasının gerçek ID'si yazılmalıdır.
+; Güncelleme URL'si sunucunuz üzerinden hizmet verilebilir veya Chrome Web Store üzerinden dağıtılıyorsa 
+; "https://clients2.google.com/service/update2/crx" kullanılabilir.
