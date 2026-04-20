@@ -12,19 +12,19 @@ if not exist .git (
     git init
 )
 
-:: 2. Check for Remote
+:: 2. Auto-fix/Set Remote from Readme.md
+echo [INFO] Syncing remote 'origin' from Readme.md...
+for /f "tokens=3" %%a in ('findstr /C:"github repo:" Readme.md') do (
+    set "FOUND_URL=%%a"
+    echo [INFO] Target Repo: !FOUND_URL!
+    git remote remove origin >nul 2>&1
+    git remote add origin !FOUND_URL!
+    goto :remote_done
+)
+
+:: If not found in Readme, check if origin already exists
 git remote get-url origin >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [INFO] Remote 'origin' not found. Checking Readme.md...
-    
-    :: Attempt to find github URL in Readme.md (specifically the line starting with github repo:)
-    for /f "tokens=3" %%a in ('findstr /C:"github repo:" Readme.md') do (
-        set "FOUND_URL=%%a"
-        echo [INFO] Found Repo URL: !FOUND_URL!
-        git remote add origin !FOUND_URL!
-        goto :remote_done
-    )
-
     echo [WARNING] Could not auto-detect repo URL from 'github repo:' line.
     set /p REPO_URL="Enter GitHub Repo URL (or press Enter to skip): "
     if not "!REPO_URL!"=="" (
