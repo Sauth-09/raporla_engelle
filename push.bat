@@ -15,16 +15,24 @@ if not exist .git (
 :: 2. Check for Remote
 git remote get-url origin >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [WARNING] Git remote 'origin' not found!
-    echo Please run: git remote add origin YOUR_REPO_URL
-    echo.
+    echo [INFO] Remote 'origin' not found. Checking Readme.md...
+    
+    :: Attempt to find github URL in Readme.md
+    for /f "tokens=2 delims=: " %%a in ('findstr "https://github.com/" Readme.md') do (
+        set "FOUND_URL=%%a"
+        :: Remove trailing .git if it was part of a larger string
+        echo [INFO] Found potential URL: !FOUND_URL!
+        git remote add origin !FOUND_URL!
+        goto :remote_done
+    )
+
+    echo [WARNING] Could not auto-detect repo URL.
     set /p REPO_URL="Enter GitHub Repo URL (or press Enter to skip): "
     if not "!REPO_URL!"=="" (
         git remote add origin !REPO_URL!
-    ) else (
-        echo Skipping remote setup. Push will fail but commit will be saved.
     )
 )
+:remote_done
 
 :: 3. Commit and Push
 echo [2/3] Adding files and committing...
