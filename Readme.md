@@ -116,3 +116,6 @@ Bu araç; yalnızca yetkili olduğunuz okul, şirket veya ev ağlarında, yerel 
 **Önemli:** Eklenti tarafından toplanan hiçbir veri (URL, IP adresi, hostname vb.) üçüncü taraf sunuculara veya internete **gönderilmez**. Veriler tamamen kendi kurduğunuz yerel ağdaki (Local Network) sunucuda kalır ve işlenir. 
 
 *Projeye ait engelleme motoru, [amitbl/blocktube](https://github.com/amitbl/blocktube) projesinin GPL-3.0 lisanslı kaynak kodlarından ilham alınarak geliştirilmiştir. Emeği geçen açık kaynak geliştiricilerine teşekkürler.*
+
+---
+github repo: https://github.com/Sauth-09/raporla_engelle.git

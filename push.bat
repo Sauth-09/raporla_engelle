@@ -12,15 +12,13 @@ if not exist .git (
     git init
 )
 
-:: 2. Auto-fix/Set Remote from Readme.md
-echo [INFO] Syncing remote 'origin' from Readme.md...
-for /f "tokens=*" %%a in ('powershell -NoProfile -Command "if (Get-Content 'Readme.md' -Raw -ErrorAction SilentlyContinue -match 'github repo:\s*(https://github\.com/[^\s\r\n]+)') { $matches[1] }"') do (
-    set "FOUND_URL=%%a"
-    echo [INFO] Target Repo: !FOUND_URL!
-    git remote remove origin >nul 2>&1
-    git remote add origin !FOUND_URL!
-    goto :remote_done
-)
+:: 2. Auto-fix/Set Remote
+echo [INFO] Syncing remote 'origin'...
+set "FOUND_URL=https://github.com/Sauth-09/raporla_engelle.git"
+echo [INFO] Target Repo: !FOUND_URL!
+git remote remove origin >nul 2>&1
+git remote add origin !FOUND_URL!
+:remote_done
 
 :: If not found in Readme, check if origin already exists
 git remote get-url origin >nul 2>&1
