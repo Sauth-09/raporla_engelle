@@ -17,16 +17,15 @@ git remote get-url origin >nul 2>&1
 if %errorlevel% neq 0 (
     echo [INFO] Remote 'origin' not found. Checking Readme.md...
     
-    :: Attempt to find github URL in Readme.md
-    for /f "tokens=2 delims=: " %%a in ('findstr "https://github.com/" Readme.md') do (
+    :: Attempt to find github URL in Readme.md (specifically the line starting with github repo:)
+    for /f "tokens=3" %%a in ('findstr /C:"github repo:" Readme.md') do (
         set "FOUND_URL=%%a"
-        :: Remove trailing .git if it was part of a larger string
-        echo [INFO] Found potential URL: !FOUND_URL!
+        echo [INFO] Found Repo URL: !FOUND_URL!
         git remote add origin !FOUND_URL!
         goto :remote_done
     )
 
-    echo [WARNING] Could not auto-detect repo URL.
+    echo [WARNING] Could not auto-detect repo URL from 'github repo:' line.
     set /p REPO_URL="Enter GitHub Repo URL (or press Enter to skip): "
     if not "!REPO_URL!"=="" (
         git remote add origin !REPO_URL!
@@ -44,8 +43,11 @@ if "!COMMIT_MSG!"=="" set "COMMIT_MSG=Update NetKalkan"
 git commit -m "!COMMIT_MSG!"
 
 echo [3/3] Pushing to GitHub...
-:: Try to push to main or master
-git push origin main || git push origin master
+:: Get current branch name
+for /f "tokens=*" %%i in ('git branch --show-current') do set "CUR_BRANCH=%%i"
+if "!CUR_BRANCH!"=="" set "CUR_BRANCH=master"
+
+git push origin !CUR_BRANCH!
 
 if %errorlevel% equ 0 (
     echo ====================================================
