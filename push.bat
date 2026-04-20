@@ -14,7 +14,7 @@ if not exist .git (
 
 :: 2. Auto-fix/Set Remote from Readme.md
 echo [INFO] Syncing remote 'origin' from Readme.md...
-for /f "tokens=3" %%a in ('findstr /C:"github repo:" Readme.md') do (
+for /f "tokens=*" %%a in ('powershell -NoProfile -Command "if (Get-Content 'Readme.md' -Raw -ErrorAction SilentlyContinue -match 'github repo:\s*(https://github\.com/[^\s\r\n]+)') { $matches[1] }"') do (
     set "FOUND_URL=%%a"
     echo [INFO] Target Repo: !FOUND_URL!
     git remote remove origin >nul 2>&1
