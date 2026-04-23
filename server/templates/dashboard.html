@@ -13,6 +13,26 @@
 </div>
 {% endif %}
 
+<!-- Connection Info -->
+<div class="card connection-card" style="margin-bottom: 20px; background: rgba(67, 97, 238, 0.1); border-left: 4px solid var(--primary-color);">
+    <div class="card-body" style="padding: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h4 style="margin: 0 0 5px 0; color: var(--primary-color);"><i class="fas fa-plug"></i> Tahta Bağlantı Adresleri</h4>
+            <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">Eklentileri kurarken ayarlara aşağıdaki adreslerden birini yazın:</p>
+        </div>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <div style="background: var(--bg-dark); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+                <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 3px;">Önerilen (.local)</span>
+                <code style="color: var(--text-light); user-select: all; font-size: 0.95rem;">{{ connection_info.mdns_url }}</code>
+            </div>
+            <div style="background: var(--bg-dark); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+                <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 3px;">Alternatif (IP)</span>
+                <code style="color: var(--text-light); user-select: all; font-size: 0.95rem;">{{ connection_info.ip_url }}</code>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Filter Section -->
 <div class="card filter-card" style="margin-bottom: 20px;">
     <div class="card-body">

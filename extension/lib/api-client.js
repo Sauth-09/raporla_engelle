@@ -1,12 +1,19 @@
-﻿/**
+/**
  * API Client Module
  * Handles all communication with the Flask backend server.
  */
 
-// Default configuration, can be overridden by config-manager
-const API_BASE_URL = "http://localhost:5000/api";
-
 export class ApiClient {
+    /**
+     * Sunucu URL'sini ayarlardan getirir.
+     * @returns {Promise<string>} API Base URL
+     */
+    static async getBaseUrl() {
+        const { serverUrl } = await chrome.storage.local.get({ serverUrl: 'http://localhost:5000' });
+        const url = serverUrl || 'http://localhost:5000';
+        return `${url.replace(/\/+$/, '')}/api`;
+    }
+
     /**
      * Send a batch of logs to the server.
      * @param {Array} logs - Array of log objects
@@ -16,7 +23,8 @@ export class ApiClient {
         if (!logs || logs.length === 0) return true;
         
         try {
-            const response = await fetch(`${API_BASE_URL}/logs`, {
+            const baseUrl = await this.getBaseUrl();
+            const response = await fetch(`${baseUrl}/logs`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -41,7 +49,8 @@ export class ApiClient {
      */
     static async fetchConfig() {
         try {
-            const response = await fetch(`${API_BASE_URL}/config`, {
+            const baseUrl = await this.getBaseUrl();
+            const response = await fetch(`${baseUrl}/config`, {
                 method: 'GET',
                 cache: 'no-cache'
             });
@@ -60,7 +69,8 @@ export class ApiClient {
      */
     static async fetchBlocklist() {
         try {
-            const response = await fetch(`${API_BASE_URL}/blocklist`, {
+            const baseUrl = await this.getBaseUrl();
+            const response = await fetch(`${baseUrl}/blocklist`, {
                 method: 'GET',
                 cache: 'no-cache'
             });
@@ -88,7 +98,8 @@ export class ApiClient {
                 await chrome.storage.local.set({ machineId: hostname });
             }
             
-            const response = await fetch(`${API_BASE_URL}/heartbeat`, {
+            const baseUrl = await this.getBaseUrl();
+            const response = await fetch(`${baseUrl}/heartbeat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ hostname })

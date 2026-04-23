@@ -15,6 +15,27 @@ from flask import (
     jsonify,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
+import socket
+
+def get_server_connection_info():
+    hostname = socket.gethostname()
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        try:
+            local_ip = socket.gethostbyname(hostname)
+        except Exception:
+            local_ip = "127.0.0.1"
+    
+    return {
+        "hostname": hostname,
+        "local_ip": local_ip,
+        "mdns_url": f"http://{hostname}.local:5000",
+        "ip_url": f"http://{local_ip}:5000"
+    }
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -104,6 +125,8 @@ def dashboard():
     db_stats = _maintenance_service.get_db_stats()
     kill_switch = _config_service.get("kill_switch_enabled", "false") == "true"
 
+    connection_info = get_server_connection_info()
+
     return render_template(
         "dashboard.html",
         stats=stats,
@@ -113,7 +136,8 @@ def dashboard():
         active_clients=active_clients,
         db_stats=db_stats,
         kill_switch=kill_switch,
-        filters={"date_from": date_from, "date_to": date_to, "hostname": hostname}
+        filters={"date_from": date_from, "date_to": date_to, "hostname": hostname},
+        connection_info=connection_info
     )
 
 
