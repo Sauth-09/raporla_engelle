@@ -30,7 +30,7 @@ if not exist "%API_FILE%" (
     pause
     exit /b
 )
-powershell -Command "(gc '%API_FILE%') -replace 'http://192.168.1.100:5000/api', 'http://localhost:5000/api' | Out-File -encoding utf8 '%API_FILE%'"
+powershell -Command "(gc '%API_FILE%') -replace 'http://192.168.1.100:5050/api', 'http://localhost:5050/api' | Out-File -encoding utf8 '%API_FILE%'"
 echo      Done.
 
 :: 2. Setup Server
@@ -59,10 +59,10 @@ start "NetKalkan Backend" cmd /k "title NetKalkan Server && set PYTHONPATH=%CD% 
 :: 4. Open browser
 echo ====================================================
 echo   SUCCESS: Server is starting!
-echo   Opening Admin Panel: http://localhost:5000
+echo   Opening Admin Panel: http://localhost:5050
 echo ====================================================
 timeout /t 5 >nul
-start http://localhost:5000
+start http://localhost:5050
 
 echo.
 echo Server window is open. Check it for any startup errors.

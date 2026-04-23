@@ -4,7 +4,7 @@ document.getElementById('saveBtn').addEventListener('click', saveOptions);
 
 // Restore the saved machineId from Chrome storage
 function restoreOptions() {
-    chrome.storage.local.get({ machineId: '', serverUrl: 'http://localhost:5000' }, function(items) {
+    chrome.storage.local.get({ machineId: '', serverUrl: 'http://localhost:5050' }, function(items) {
         document.getElementById('machineId').value = items.machineId;
         document.getElementById('serverUrl').value = items.serverUrl;
     });
@@ -29,7 +29,7 @@ function saveOptions() {
         document.getElementById('serverUrl').value = formattedUrl;
     }
 
-    chrome.storage.local.set({ machineId: machineId, serverUrl: formattedUrl || 'http://localhost:5000' }, function() {
+    chrome.storage.local.set({ machineId: machineId, serverUrl: formattedUrl || 'http://localhost:5050' }, function() {
         // Update status to let user know options were saved.
         status.style.color = '#4bb543'; // Success green
         status.textContent = 'Ayarlar başarıyla kaydedildi!';
