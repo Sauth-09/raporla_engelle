@@ -3,7 +3,10 @@ REST API routes for Chrome extension communication.
 These endpoints are consumed by the client extensions running on school devices.
 """
 
+import logging
 from flask import Blueprint, request, jsonify
+
+logger = logging.getLogger(__name__)
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -56,11 +59,14 @@ def receive_logs():
         logs = logs[:max_batch]
 
     client_ip = request.remote_addr or "unknown"
+    logger.info("[LOG] Received %d logs from %s", len(logs), client_ip)
 
     try:
         count = _log_service.create_batch(logs, client_ip)
+        logger.info("[LOG] Stored %d logs from %s", count, client_ip)
         return jsonify({"status": "ok", "received": count}), 201
     except Exception as e:
+        logger.error("[LOG] Failed to store logs from %s: %s", client_ip, e)
         return jsonify({"error": f"Failed to store logs: {str(e)}"}), 500
 
 
@@ -77,10 +83,13 @@ def get_config():
         "block_message": "..."
     }
     """
+    client_ip = request.remote_addr or "unknown"
+    logger.debug("[CONFIG] Config requested by %s", client_ip)
     try:
         config = _config_service.get_extension_config()
         return jsonify(config), 200
     except Exception as e:
+        logger.error("[CONFIG] Error serving config to %s: %s", client_ip, e)
         return jsonify({"error": str(e)}), 500
 
 
@@ -124,6 +133,7 @@ def heartbeat():
     data = request.get_json(silent=True) or {}
     client_ip = request.remote_addr or "unknown"
     hostname = data.get("hostname", "")
+    logger.info("[HEARTBEAT] from %s (%s)", hostname or "no-hostname", client_ip)
 
     # Store as a special log entry for tracking
     try:
@@ -140,4 +150,5 @@ def heartbeat():
         )
         return jsonify({"status": "ok"}), 200
     except Exception as e:
+        logger.error("[HEARTBEAT] Error from %s: %s", client_ip, e)
         return jsonify({"error": str(e)}), 500

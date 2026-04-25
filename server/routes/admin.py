@@ -33,8 +33,8 @@ def get_server_connection_info():
     return {
         "hostname": hostname,
         "local_ip": local_ip,
-        "mdns_url": f"http://{hostname}.local:5050",
-        "ip_url": f"http://{local_ip}:5050"
+        "mdns_url": f"http://{hostname}.local:8080",
+        "ip_url": f"http://{local_ip}:8080"
     }
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -361,3 +361,61 @@ def api_block_video():
     # Add to blocklist as video_id type
     _blocklist_service.add_blocked_item(video_id, "video_id", False, f"Hızlı Engel: {title}")
     return jsonify({"success": True, "message": f"{video_id} başarıyla engellendi."})
+
+
+# ── Clients (Sınıflar / Cihazlar) ────────────────────────────────────
+
+@admin_bp.route("/clients")
+@login_required
+def clients():
+    """List all known client devices/classes."""
+    all_clients = _log_service.get_all_clients()
+    return render_template("clients.html", clients=all_clients)
+
+
+@admin_bp.route("/client/<path:hostname>")
+@login_required
+def client_detail(hostname):
+    """Detailed activity view for a specific client device/class."""
+    page = request.args.get("page", 1, type=int)
+    log_type = request.args.get("log_type", "all")
+    date_from = request.args.get("date_from", "")
+    date_to = request.args.get("date_to", "")
+
+    # Get activity logs
+    pagination = _log_service.get_client_activity(
+        hostname=hostname,
+        page=page,
+        per_page=50,
+        log_type=log_type if log_type != "all" else None,
+        date_from=date_from or None,
+        date_to=date_to or None,
+    )
+
+    # Get top content for this client
+    top_videos = _log_service.get_client_top_videos(hostname, limit=10)
+    top_sites = _log_service.get_client_top_sites(hostname, limit=10)
+
+    return render_template(
+        "client_detail.html",
+        hostname=hostname,
+        logs=pagination.items,
+        pagination=pagination,
+        top_videos=top_videos,
+        top_sites=top_sites,
+        filters={"log_type": log_type, "date_from": date_from, "date_to": date_to},
+    )
+
+
+# ── Video Detail ──────────────────────────────────────────────────────
+
+@admin_bp.route("/video/<video_id>")
+@login_required
+def video_detail(video_id):
+    """Detailed view for a specific YouTube video."""
+    detail = _log_service.get_video_detail(video_id)
+    if not detail:
+        flash("Video bulunamadı.", "error")
+        return redirect(url_for("admin.dashboard"))
+
+    return render_template("video_detail.html", video=detail)

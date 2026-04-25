@@ -4,8 +4,16 @@ Creates and configures the Flask application with dependency injection.
 """
 
 import os
+import logging
 from flask import Flask
 from flask_cors import CORS
+
+# Configure logging so API debug messages are visible
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 from server.config import get_config
 from server.models.base import db
@@ -91,4 +99,4 @@ def create_app(config_name=None):
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(host="0.0.0.0", port=5050, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True)

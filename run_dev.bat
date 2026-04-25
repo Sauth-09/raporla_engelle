@@ -30,7 +30,7 @@ if not exist "%API_FILE%" (
     pause
     exit /b
 )
-powershell -Command "(gc '%API_FILE%') -replace 'http://192.168.1.100:5050/api', 'http://localhost:5050/api' | Out-File -encoding utf8 '%API_FILE%'"
+powershell -Command "(gc '%API_FILE%') -replace 'http://192.168.1.100:5050/api', 'http://localhost:8080/api' -replace 'http://localhost:5050/api', 'http://localhost:8080/api' | Out-File -encoding utf8 '%API_FILE%'"
 echo      Done.
 
 :: 2. Setup Server
@@ -52,6 +52,10 @@ pip install -r server\requirements.txt
 
 :: 3. Start Server from ROOT as a module
 echo [4/4] Starting server as a module...
+:: Kill any process currently holding port 8080
+echo      Arka planda acik kalmis eski sunucular temizleniyor...
+powershell -Command "Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | Select-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }"
+
 :: We set PYTHONPATH to current directory to ensure 'server' package is found
 set "PYTHONPATH=%CD%"
 start "NetKalkan Backend" cmd /k "title NetKalkan Server && set PYTHONPATH=%CD% && call server\venv\Scripts\activate && python -m server.app"
@@ -59,10 +63,10 @@ start "NetKalkan Backend" cmd /k "title NetKalkan Server && set PYTHONPATH=%CD% 
 :: 4. Open browser
 echo ====================================================
 echo   SUCCESS: Server is starting!
-echo   Opening Admin Panel: http://localhost:5050
+echo   Opening Admin Panel: http://localhost:8080
 echo ====================================================
 timeout /t 5 >nul
-start http://localhost:5050
+start http://localhost:8080
 
 echo.
 echo Server window is open. Check it for any startup errors.

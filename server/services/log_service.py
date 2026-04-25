@@ -4,7 +4,7 @@ Handles all CRUD operations and analytics for browsing activity logs.
 """
 
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, case
 from server.models.base import db
 from server.models.log_entry import LogEntry
 from server.services.interfaces import ILogService
@@ -306,6 +306,247 @@ class LogService(ILogService):
         count = LogEntry.query.filter(LogEntry.timestamp < cutoff).delete()
         db.session.commit()
         return count
+
+    def get_video_detail(self, video_id):
+        """
+        Get detailed information about a specific video:
+        basic info, total watch count, and per-client breakdown.
+
+        Args:
+            video_id: YouTube video ID.
+
+        Returns:
+            Dictionary with video info and per-client watch data.
+        """
+        # Basic video info (latest entry)
+        latest = (
+            LogEntry.query
+            .filter(LogEntry.video_id == video_id)
+            .order_by(desc(LogEntry.timestamp))
+            .first()
+        )
+
+        if not latest:
+            return None
+
+        # Total watch count
+        total_count = (
+            db.session.query(func.count(LogEntry.id))
+            .filter(LogEntry.video_id == video_id)
+            .scalar() or 0
+        )
+
+        # Per-client breakdown (which classes/devices watched)
+        client_breakdown = (
+            db.session.query(
+                LogEntry.client_hostname,
+                LogEntry.client_ip,
+                func.count(LogEntry.id).label("watch_count"),
+                func.min(LogEntry.timestamp).label("first_watched"),
+                func.max(LogEntry.timestamp).label("last_watched"),
+            )
+            .filter(LogEntry.video_id == video_id)
+            .group_by(LogEntry.client_hostname, LogEntry.client_ip)
+            .order_by(desc("watch_count"))
+            .all()
+        )
+
+        # Timeline: recent watch events
+        recent_watches = (
+            LogEntry.query
+            .filter(LogEntry.video_id == video_id)
+            .order_by(desc(LogEntry.timestamp))
+            .limit(50)
+            .all()
+        )
+
+        return {
+            "video_id": video_id,
+            "title": latest.title or "Başlıksız",
+            "channel_name": latest.channel_name or "Bilinmeyen Kanal",
+            "total_count": total_count,
+            "clients": [
+                {
+                    "hostname": r[0] or "Bilinmiyor",
+                    "client_ip": r[1],
+                    "watch_count": r[2],
+                    "first_watched": r[3].isoformat() if r[3] else None,
+                    "last_watched": r[4].isoformat() if r[4] else None,
+                }
+                for r in client_breakdown
+            ],
+            "recent_watches": [
+                {
+                    "hostname": w.client_hostname or "Bilinmiyor",
+                    "client_ip": w.client_ip,
+                    "timestamp": w.timestamp.isoformat() if w.timestamp else None,
+                }
+                for w in recent_watches
+            ],
+        }
+
+    def get_client_activity(self, hostname, page=1, per_page=50, log_type=None, date_from=None, date_to=None):
+        """
+        Get paginated activity logs for a specific client hostname.
+
+        Args:
+            hostname: The client_hostname to filter by.
+            page: Page number.
+            per_page: Items per page.
+            log_type: Optional log type filter.
+            date_from: Optional start date string (YYYY-MM-DD).
+            date_to: Optional end date string (YYYY-MM-DD).
+
+        Returns:
+            Paginated query result.
+        """
+        query = (
+            LogEntry.query
+            .filter(LogEntry.client_hostname == hostname)
+            .order_by(desc(LogEntry.timestamp))
+        )
+
+        if log_type and log_type != "all":
+            query = query.filter(LogEntry.log_type == log_type)
+
+        if date_from:
+            try:
+                dt_from = datetime.strptime(date_from, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                query = query.filter(LogEntry.timestamp >= dt_from)
+            except ValueError:
+                pass
+
+        if date_to:
+            try:
+                dt_to = datetime.strptime(date_to, "%Y-%m-%d").replace(
+                    hour=23, minute=59, second=59, tzinfo=timezone.utc
+                )
+                query = query.filter(LogEntry.timestamp <= dt_to)
+            except ValueError:
+                pass
+
+        return query.paginate(page=page, per_page=per_page, error_out=False)
+
+    def get_all_clients(self):
+        """
+        Get a list of all known client hostnames with aggregated stats.
+
+        Returns:
+            List of client info dictionaries sorted by last_seen descending.
+        """
+        now = datetime.utcnow()
+        since_30min = now - timedelta(minutes=30)
+
+        results = (
+            db.session.query(
+                LogEntry.client_hostname,
+                LogEntry.client_ip,
+                func.count(LogEntry.id).label("total_logs"),
+                func.count(
+                    case(
+                        (LogEntry.log_type == "youtube_video", LogEntry.id),
+                    )
+                ).label("youtube_count"),
+                func.count(
+                    case(
+                        (LogEntry.log_type == "page_visit", LogEntry.id),
+                    )
+                ).label("page_visit_count"),
+                func.max(LogEntry.timestamp).label("last_seen"),
+                func.min(LogEntry.timestamp).label("first_seen"),
+            )
+            .filter(
+                LogEntry.client_hostname.isnot(None),
+                LogEntry.client_hostname != "",
+                LogEntry.log_type != "heartbeat",
+            )
+            .group_by(LogEntry.client_hostname)
+            .order_by(desc("last_seen"))
+            .all()
+        )
+
+        return [
+            {
+                "hostname": r[0],
+                "client_ip": r[1],
+                "total_logs": r[2],
+                "youtube_count": r[3],
+                "page_visit_count": r[4],
+                "last_seen": r[5].isoformat() if r[5] else None,
+                "first_seen": r[6].isoformat() if r[6] else None,
+                "is_online": r[5] >= since_30min if r[5] else False,
+            }
+            for r in results
+        ]
+
+    def get_client_top_videos(self, hostname, limit=10):
+        """
+        Get top watched videos for a specific client hostname.
+
+        Args:
+            hostname: Client hostname to filter.
+            limit: Maximum results.
+
+        Returns:
+            List of video info dictionaries.
+        """
+        results = (
+            db.session.query(
+                LogEntry.video_id,
+                LogEntry.title,
+                LogEntry.channel_name,
+                func.count(LogEntry.id).label("watch_count"),
+                func.max(LogEntry.timestamp).label("last_watched"),
+            )
+            .filter(
+                LogEntry.client_hostname == hostname,
+                LogEntry.log_type == "youtube_video",
+                LogEntry.video_id.isnot(None),
+            )
+            .group_by(LogEntry.video_id, LogEntry.title, LogEntry.channel_name)
+            .order_by(desc("watch_count"))
+            .limit(limit)
+            .all()
+        )
+
+        return [
+            {
+                "video_id": r[0],
+                "title": r[1] or "Başlıksız",
+                "channel_name": r[2] or "Bilinmeyen Kanal",
+                "count": r[3],
+                "last_watched": r[4].isoformat() if r[4] else None,
+            }
+            for r in results
+        ]
+
+    def get_client_top_sites(self, hostname, limit=10):
+        """
+        Get top visited sites for a specific client hostname.
+
+        Args:
+            hostname: Client hostname to filter.
+            limit: Maximum results.
+
+        Returns:
+            List of site info dictionaries.
+        """
+        results = (
+            db.session.query(
+                LogEntry.url,
+                func.count(LogEntry.id).label("visit_count"),
+            )
+            .filter(
+                LogEntry.client_hostname == hostname,
+                LogEntry.log_type == "page_visit",
+            )
+            .group_by(LogEntry.url)
+            .order_by(desc("visit_count"))
+            .limit(limit)
+            .all()
+        )
+
+        return [{"url": r[0], "count": r[1]} for r in results]
 
 
 def _parse_timestamp(ts_value):

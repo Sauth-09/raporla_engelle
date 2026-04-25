@@ -215,8 +215,8 @@
                 <div class="ranking-item">
                     <span class="ranking-pos">{{ loop.index }}</span>
                     <div class="ranking-info">
-                        <a href="https://www.youtube.com/watch?v={{ video.video_id }}" target="_blank" class="ranking-label" title="{{ video.title }}">{{ video.title | default('Başlıksız') | truncate(45) }}</a>
-                        <span class="ranking-sub">{{ video.channel_name | default('Bilinmeyen Kanal') }}</span>
+                        <a href="{{ url_for('admin.video_detail', video_id=video.video_id) }}" class="ranking-label" title="{{ video.title }}">{{ video.title | default('Başlıksız') | truncate(45) }}</a>
+                        <span class="ranking-sub">{{ video.channel_name | default('Bilinmeyen Kanal') }} · <a href="https://www.youtube.com/watch?v={{ video.video_id }}" target="_blank" style="color: var(--text-muted);"><i class="fas fa-external-link-alt" style="font-size: 0.65rem;"></i> YouTube</a></span>
                     </div>
                     <div class="ranking-actions">
                         <span class="ranking-value">{{ video.count }}</span>
@@ -271,20 +271,23 @@
     <div class="card" id="active-clients-card">
         <div class="card-header">
             <h3><i class="fas fa-network-wired"></i> Aktif Cihazlar</h3>
-            <span class="card-badge">Son 30 dk</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="card-badge">Son 30 dk</span>
+                <a href="{{ url_for('admin.clients') }}" class="btn btn-sm btn-secondary" style="padding: 3px 10px; font-size: 0.75rem;"><i class="fas fa-th-list"></i> Tümü</a>
+            </div>
         </div>
         <div class="card-body">
             {% if active_clients %}
             <div class="client-list">
                 {% for client in active_clients %}
-                <div class="client-item">
+                <a href="{{ url_for('admin.client_detail', hostname=client.hostname) }}" class="client-item" style="text-decoration: none; color: inherit;">
                     <div class="client-status online"></div>
                     <div class="client-info">
                         <span class="client-ip">{{ client.client_ip }}</span>
                         <span class="client-hostname">{{ client.hostname | default('Bilinmiyor') }}</span>
                     </div>
-                    <span class="client-logs">{{ client.log_count }} log</span>
-                </div>
+                    <span class="client-logs">{{ client.log_count }} log <i class="fas fa-chevron-right" style="font-size: 0.7rem; margin-left: 4px; opacity: 0.5;"></i></span>
+                </a>
                 {% endfor %}
             </div>
             {% else %}

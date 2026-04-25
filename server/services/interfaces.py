@@ -46,6 +46,31 @@ class ILogService(ABC):
         """Delete log entries older than the specified number of days."""
         ...
 
+    @abstractmethod
+    def get_video_detail(self, video_id):
+        """Get detailed info about a video: which clients watched it and when."""
+        ...
+
+    @abstractmethod
+    def get_client_activity(self, hostname, page=1, per_page=50, log_type=None, date_from=None, date_to=None):
+        """Get paginated activity logs for a specific client hostname."""
+        ...
+
+    @abstractmethod
+    def get_all_clients(self):
+        """Get a list of all known client hostnames with stats."""
+        ...
+
+    @abstractmethod
+    def get_client_top_videos(self, hostname, limit=10):
+        """Get top videos for a specific client."""
+        ...
+
+    @abstractmethod
+    def get_client_top_sites(self, hostname, limit=10):
+        """Get top sites for a specific client."""
+        ...
+
 
 class IBlocklistService(ABC):
     """Interface for blacklist/whitelist management."""

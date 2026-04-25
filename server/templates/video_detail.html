@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}{{ video.title }} - Video Detayı{% endblock %}
+{% block page_title %}
+<a href="{{ url_for('admin.dashboard') }}" style="color: var(--text-muted); font-size: 0.85rem;"><i class="fas fa-arrow-left"></i> Panel</a>
+&nbsp;&middot;&nbsp; Video Detayı
+{% endblock %}
+
+{% block content %}
+<style>
+    .video-hero {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 24px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        flex-wrap: wrap;
+    }
+    .video-thumbnail {
+        width: 320px;
+        min-height: 180px;
+        background: var(--bg-input);
+        flex-shrink: 0;
+        position: relative;
+        overflow: hidden;
+    }
+    .video-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .video-thumbnail-overlay {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        padding: 8px 12px;
+        background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .video-thumbnail-overlay a {
+        color: #fff;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .video-hero-info {
+        padding: 24px;
+        flex: 1;
+        min-width: 280px;
+    }
+    .video-hero-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        line-height: 1.3;
+    }
+    .video-hero-channel {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .video-hero-stats {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .video-hero-stat {
+        text-align: center;
+        padding: 12px 20px;
+        background: var(--bg-input);
+        border-radius: var(--radius-sm);
+    }
+    .video-hero-stat-value {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent-primary);
+    }
+    .video-hero-stat-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+        .video-thumbnail { width: 100%; min-height: 200px; }
+    }
+
+    .watchers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 12px;
+    }
+    .watcher-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        background: var(--bg-input);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+        transition: var(--transition);
+        text-decoration: none;
+        color: inherit;
+    }
+    .watcher-card:hover {
+        border-color: var(--accent-primary);
+        transform: translateY(-1px);
+        color: inherit;
+    }
+    .watcher-icon {
+        width: 40px; height: 40px;
+        border-radius: var(--radius-sm);
+        background: var(--gradient-info);
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 1rem; flex-shrink: 0;
+    }
+    .watcher-info { flex: 1; }
+    .watcher-name {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .watcher-meta {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+    .watcher-count {
+        text-align: center;
+    }
+    .watcher-count-value {
+        display: block;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--accent-warning);
+    }
+    .watcher-count-label {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+
+    .timeline-list {
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 8px;
+    }
+    .timeline-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.85rem;
+    }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--accent-primary);
+        flex-shrink: 0;
+    }
+    .timeline-time {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        white-space: nowrap;
+        min-width: 120px;
+    }
+    .timeline-host {
+        font-weight: 500;
+    }
+</style>
+
+<!-- Video Hero Section -->
+<div class="video-hero">
+    <div class="video-thumbnail">
+        <img src="https://img.youtube.com/vi/{{ video.video_id }}/hqdefault.jpg" alt="{{ video.title }}" loading="lazy">
+        <div class="video-thumbnail-overlay">
+            <a href="https://www.youtube.com/watch?v={{ video.video_id }}" target="_blank">
+                <i class="fab fa-youtube"></i> YouTube'da Aç
+            </a>
+        </div>
+    </div>
+    <div class="video-hero-info">
+        <h2 class="video-hero-title">{{ video.title }}</h2>
+        <div class="video-hero-channel">
+            <i class="fas fa-user-circle"></i>
+            {{ video.channel_name }}
+        </div>
+        <div class="video-hero-stats">
+            <div class="video-hero-stat">
+                <span class="video-hero-stat-value">{{ video.total_count }}</span>
+                <span class="video-hero-stat-label">Toplam İzlenme</span>
+            </div>
+            <div class="video-hero-stat">
+                <span class="video-hero-stat-value" style="color: var(--accent-info);">{{ video.clients | length }}</span>
+                <span class="video-hero-stat-label">Farklı Cihaz</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Two Column Layout -->
+<div class="dashboard-grid">
+    <!-- Which classes/devices watched -->
+    <div class="card" id="video-watchers-card">
+        <div class="card-header">
+            <h3><i class="fas fa-chalkboard-teacher"></i> Hangi Sınıflar / Cihazlar İzledi?</h3>
+            <span class="card-badge">{{ video.clients | length }} cihaz</span>
+        </div>
+        <div class="card-body">
+            {% if video.clients %}
+            <div class="watchers-grid">
+                {% for client in video.clients %}
+                <a href="{{ url_for('admin.client_detail', hostname=client.hostname) }}" class="watcher-card">
+                    <div class="watcher-icon">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <div class="watcher-info">
+                        <div class="watcher-name">{{ client.hostname }}</div>
+                        <div class="watcher-meta">
+                            {{ client.client_ip }}
+                            &middot; İlk: {{ client.first_watched[:16] if client.first_watched else '-' }}
+                            &middot; Son: {{ client.last_watched[:16] if client.last_watched else '-' }}
+                        </div>
+                    </div>
+                    <div class="watcher-count">
+                        <span class="watcher-count-value">{{ client.watch_count }}</span>
+                        <span class="watcher-count-label">kez</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state">Veri yok</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Watch Timeline -->
+    <div class="card" id="video-timeline-card">
+        <div class="card-header">
+            <h3><i class="fas fa-clock"></i> İzlenme Zaman Çizelgesi</h3>
+            <span class="card-badge">Son 50</span>
+        </div>
+        <div class="card-body">
+            {% if video.recent_watches %}
+            <div class="timeline-list">
+                {% for watch in video.recent_watches %}
+                <div class="timeline-item">
+                    <span class="timeline-dot"></span>
+                    <span class="timeline-time">{{ watch.timestamp[:19] | replace('T', ' ') if watch.timestamp else '-' }}</span>
+                    <span class="timeline-host">
+                        <a href="{{ url_for('admin.client_detail', hostname=watch.hostname) }}" style="color: var(--text-primary);">
+                            {{ watch.hostname }}
+                        </a>
+                    </span>
+                    <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: auto;">{{ watch.client_ip }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state">Veri yok</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card" style="margin-top: 20px;">
+    <div class="card-body" style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <span style="color: var(--text-muted); font-size: 0.9rem;"><i class="fas fa-tools"></i> Hızlı İşlemler:</span>
+        <a href="https://www.youtube.com/watch?v={{ video.video_id }}" target="_blank" class="btn btn-secondary btn-sm">
+            <i class="fab fa-youtube"></i> YouTube'da Aç
+        </a>
+        <button class="btn btn-danger btn-sm block-this-video-btn" data-id="{{ video.video_id }}" data-title="{{ video.title }}">
+            <i class="fas fa-ban"></i> Bu Videoyu Engelle
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelector('.block-this-video-btn')?.addEventListener('click', async function() {
+    const videoId = this.getAttribute('data-id');
+    const title = this.getAttribute('data-title');
+
+    if (!confirm(`'${title}' isimli videoyu engellemek istediğinize emin misiniz?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch("{{ url_for('admin.api_block_video') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ video_id: videoId, title: title })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            alert("Video başarıyla engellendi.");
+            this.innerHTML = '<i class="fas fa-check"></i> Engellendi';
+            this.disabled = true;
+            this.classList.remove('btn-danger');
+            this.classList.add('btn-success');
+        } else {
+            alert("Hata: " + result.message);
+        }
+    } catch (error) {
+        console.error("Engelleme hatası:", error);
+        alert("İşlem sırasında bir hata oluştu.");
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Sınıflar / Cihazlar{% endblock %}
+{% block page_title %}Sınıflar / Cihazlar{% endblock %}
+
+{% block content %}
+<style>
+    .clients-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .client-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 20px;
+        transition: var(--transition);
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        position: relative;
+        overflow: hidden;
+    }
+    .client-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--accent-primary);
+        color: inherit;
+    }
+    .client-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: var(--gradient-primary);
+        opacity: 0;
+        transition: var(--transition);
+    }
+    .client-card:hover::before {
+        opacity: 1;
+    }
+
+    .client-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .client-card-icon {
+        width: 48px; height: 48px;
+        border-radius: var(--radius-md);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    .client-card-icon.online {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--accent-success);
+    }
+    .client-card-icon.offline {
+        background: rgba(107, 114, 148, 0.15);
+        color: var(--text-muted);
+    }
+    .client-card-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    .client-card-ip {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+    .client-card-status {
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .client-card-status.online {
+        color: var(--accent-success);
+    }
+    .client-card-status.offline {
+        color: var(--text-muted);
+    }
+    .client-card-status .status-dot-sm {
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .client-card-status.online .status-dot-sm {
+        background: var(--accent-success);
+        box-shadow: 0 0 6px rgba(34,197,94,0.5);
+    }
+    .client-card-status.offline .status-dot-sm {
+        background: var(--text-muted);
+    }
+
+    .client-card-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .client-stat-mini {
+        text-align: center;
+        padding: 8px 4px;
+        background: var(--bg-input);
+        border-radius: var(--radius-sm);
+    }
+    .client-stat-mini-value {
+        display: block;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent-info);
+    }
+    .client-stat-mini-label {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .client-card-footer {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .clients-summary {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    .summary-chip {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .summary-chip-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    .summary-chip-label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+    .summary-chip--online .summary-chip-value { color: var(--accent-success); }
+    .summary-chip--total .summary-chip-value { color: var(--accent-primary); }
+</style>
+
+<!-- Summary Row -->
+<div class="clients-summary">
+    <div class="summary-chip summary-chip--total">
+        <i class="fas fa-desktop" style="font-size: 1.3rem; color: var(--accent-primary);"></i>
+        <div>
+            <span class="summary-chip-value">{{ clients | length }}</span>
+            <span class="summary-chip-label">Toplam Cihaz</span>
+        </div>
+    </div>
+    <div class="summary-chip summary-chip--online">
+        <i class="fas fa-wifi" style="font-size: 1.3rem; color: var(--accent-success);"></i>
+        <div>
+            <span class="summary-chip-value">{{ clients | selectattr('is_online') | list | length }}</span>
+            <span class="summary-chip-label">Çevrimiçi</span>
+        </div>
+    </div>
+</div>
+
+<!-- Client Cards Grid -->
+{% if clients %}
+<div class="clients-grid">
+    {% for client in clients %}
+    <a href="{{ url_for('admin.client_detail', hostname=client.hostname) }}" class="client-card" id="client-card-{{ loop.index }}">
+        <div class="client-card-header">
+            <div class="client-card-icon {{ 'online' if client.is_online else 'offline' }}">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <div>
+                <div class="client-card-title">{{ client.hostname }}</div>
+                <div class="client-card-ip">{{ client.client_ip }}</div>
+            </div>
+            <div style="margin-left: auto;">
+                <span class="client-card-status {{ 'online' if client.is_online else 'offline' }}">
+                    <span class="status-dot-sm"></span>
+                    {{ 'Çevrimiçi' if client.is_online else 'Çevrimdışı' }}
+                </span>
+            </div>
+        </div>
+
+        <div class="client-card-stats">
+            <div class="client-stat-mini">
+                <span class="client-stat-mini-value">{{ client.total_logs }}</span>
+                <span class="client-stat-mini-label">Toplam Log</span>
+            </div>
+            <div class="client-stat-mini">
+                <span class="client-stat-mini-value" style="color: var(--accent-danger);">{{ client.youtube_count }}</span>
+                <span class="client-stat-mini-label">YouTube</span>
+            </div>
+            <div class="client-stat-mini">
+                <span class="client-stat-mini-value" style="color: var(--accent-success);">{{ client.page_visit_count }}</span>
+                <span class="client-stat-mini-label">Sayfa Ziy.</span>
+            </div>
+        </div>
+
+        <div class="client-card-footer">
+            <span><i class="fas fa-clock"></i> Son görülme: {{ client.last_seen[:16] if client.last_seen else 'Bilinmiyor' }}</span>
+            <i class="fas fa-chevron-right" style="opacity: 0.4;"></i>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <p class="empty-state">
+            <i class="fas fa-desktop"></i>
+            Henüz kayıtlı cihaz yok. Eklentiler veri göndermeye başladığında cihazlar burada görünecektir.
+        </p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

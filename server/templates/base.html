@@ -28,6 +28,10 @@
                 <i class="fas fa-list-alt"></i>
                 <span>Log Kayıtları</span>
             </a>
+            <a href="{{ url_for('admin.clients') }}" class="nav-link {% if request.endpoint in ['admin.clients', 'admin.client_detail'] %}active{% endif %}" id="nav-clients">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>Sınıflar / Cihazlar</span>
+            </a>
             <a href="{{ url_for('admin.blocklist') }}" class="nav-link {% if request.endpoint == 'admin.blocklist' %}active{% endif %}" id="nav-blocklist">
                 <i class="fas fa-ban"></i>
                 <span>Kara Liste</span>

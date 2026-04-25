@@ -33,11 +33,11 @@ def run_server():
     """ Run the Flask app """
     app = create_app()
     # Disable reloader because it spawns a subprocess which is problematic with pystray and pyinstaller
-    app.run(host="0.0.0.0", port=5050, debug=False, use_reloader=False)
+    app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
 
 def open_browser(icon, item):
     """ Open the admin dashboard in the default browser """
-    webbrowser.open("http://127.0.0.1:5050/admin/login")
+    webbrowser.open("http://127.0.0.1:8080/admin/login")
 
 def exit_action(icon, item):
     """ Exit the application """
