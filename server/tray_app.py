@@ -7,8 +7,9 @@ from PIL import Image
 
 # Redirect stdout and stderr to devnull to prevent crash in --noconsole mode
 if sys.executable.endswith("pythonw.exe") or getattr(sys, 'frozen', False):
-    sys.stdout = open(os.devnull, 'w')
-    sys.stderr = open(os.devnull, 'w')
+    log_path = os.path.join(os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__), "crash.log")
+    sys.stdout = open(log_path, 'a')
+    sys.stderr = open(log_path, 'a')
 
 # Must be imported after redirection so Werkzeug logging doesn't crash
 import pystray
@@ -33,11 +34,11 @@ def run_server():
     """ Run the Flask app """
     app = create_app()
     # Disable reloader because it spawns a subprocess which is problematic with pystray and pyinstaller
-    app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
+    app.run(host="0.0.0.0", port=8000, debug=False, use_reloader=False)
 
 def open_browser(icon, item):
     """ Open the admin dashboard in the default browser """
-    webbrowser.open("http://127.0.0.1:8080/admin/login")
+    webbrowser.open("http://127.0.0.1:8000/admin/login")
 
 def exit_action(icon, item):
     """ Exit the application """

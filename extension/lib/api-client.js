@@ -1,4 +1,4 @@
-﻿/**
+/**
  * API Client Module
  * Handles all communication with the Flask backend server.
  * 
@@ -15,8 +15,8 @@ export class ApiClient {
      * @returns {Promise<string>} API Base URL
      */
     static async getBaseUrl() {
-        const { serverUrl } = await chrome.storage.local.get({ serverUrl: 'http://localhost:8080' });
-        const url = serverUrl || 'http://localhost:8080';
+        const { serverUrl } = await chrome.storage.local.get({ serverUrl: 'http://localhost:8000' });
+        const url = serverUrl || 'http://localhost:8000';
         return `${url.replace(/\/+$/, '')}/api`;
     }
 

@@ -33,8 +33,8 @@ def get_server_connection_info():
     return {
         "hostname": hostname,
         "local_ip": local_ip,
-        "mdns_url": f"http://{hostname}.local:8080",
-        "ip_url": f"http://{local_ip}:8080"
+        "mdns_url": f"http://{hostname}.local:8000",
+        "ip_url": f"http://{local_ip}:8000"
     }
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
