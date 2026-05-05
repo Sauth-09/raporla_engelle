@@ -27,6 +27,8 @@ chrome.runtime.sendMessage({ action: 'GET_CONFIG_AND_LISTS' }, (response) => {
     (document.head || document.documentElement).appendChild(scriptNode);
 });
 
+const recentlyLogged = new Set();
+
 // 4. Listen for logging events from inject.js
 window.addEventListener('NetKalkanLogActivity', (event) => {
     const logData = event.detail;
@@ -34,6 +36,11 @@ window.addEventListener('NetKalkanLogActivity', (event) => {
     // Add current URL
     logData.url = window.location.href;
     logData.log_type = 'youtube_video';
+    
+    if (logData.videoId) {
+        recentlyLogged.add(logData.videoId);
+        if (recentlyLogged.size > 50) recentlyLogged.clear();
+    }
     
     // Send to background for batching
     chrome.runtime.sendMessage({ 
@@ -62,6 +69,8 @@ document.addEventListener('yt-navigate-finish', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const videoId = urlParams.get('v');
     
+    if (recentlyLogged.has(videoId)) return; // Already logged by inject.js
+    
     // For videos, wait a bit for the player data to load to get accurate channel name
     let attempts = 0;
     const checkPlayer = setInterval(() => {
@@ -73,16 +82,22 @@ document.addEventListener('yt-navigate-finish', () => {
             // Ensure we are logging the correct video
             if (data && data.video_id === videoId) {
                 clearInterval(checkPlayer);
-                chrome.runtime.sendMessage({ 
-                    action: 'LOG_ACTIVITY', 
-                    data: {
-                        url: window.location.href,
-                        title: data.title || document.title,
-                        video_id: data.video_id,
-                        channel_name: data.author,
-                        log_type: 'youtube_video'
-                    }
-                });
+                
+                if (!recentlyLogged.has(videoId)) {
+                    recentlyLogged.add(videoId);
+                    if (recentlyLogged.size > 50) recentlyLogged.clear();
+                    
+                    chrome.runtime.sendMessage({ 
+                        action: 'LOG_ACTIVITY', 
+                        data: {
+                            url: window.location.href,
+                            title: data.title || document.title,
+                            video_id: data.video_id,
+                            channel_name: data.author,
+                            log_type: 'youtube_video'
+                        }
+                    });
+                }
                 return;
             }
         }
@@ -90,15 +105,20 @@ document.addEventListener('yt-navigate-finish', () => {
         // Fallback if player data not found after 10 attempts (5 seconds)
         if (attempts > 10) {
             clearInterval(checkPlayer);
-            chrome.runtime.sendMessage({ 
-                action: 'LOG_ACTIVITY', 
-                data: {
-                    url: window.location.href,
-                    title: document.title || 'YouTube Video',
-                    video_id: videoId,
-                    log_type: 'youtube_video'
-                }
-            });
+            if (!recentlyLogged.has(videoId)) {
+                recentlyLogged.add(videoId);
+                if (recentlyLogged.size > 50) recentlyLogged.clear();
+                
+                chrome.runtime.sendMessage({ 
+                    action: 'LOG_ACTIVITY', 
+                    data: {
+                        url: window.location.href,
+                        title: document.title || 'YouTube Video',
+                        video_id: videoId,
+                        log_type: 'youtube_video'
+                    }
+                });
+            }
         }
     }, 500);
 });

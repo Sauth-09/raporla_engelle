@@ -246,7 +246,7 @@ class LogService(ILogService):
             {
                 "client_ip": r[0],
                 "hostname": r[1],
-                "last_seen": r[2].isoformat() if r[2] else None,
+                "last_seen": r[2],
                 "log_count": r[3],
             }
             for r in results
@@ -304,6 +304,18 @@ class LogService(ILogService):
         """
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         count = LogEntry.query.filter(LogEntry.timestamp < cutoff).delete()
+        db.session.commit()
+        return count
+
+    def delete_all_logs(self):
+        """Delete all log entries."""
+        count = db.session.query(LogEntry).delete()
+        db.session.commit()
+        return count
+
+    def delete_client_logs(self, hostname):
+        """Delete all log entries for a specific client hostname."""
+        count = LogEntry.query.filter(LogEntry.client_hostname == hostname).delete()
         db.session.commit()
         return count
 
@@ -370,8 +382,8 @@ class LogService(ILogService):
                     "hostname": r[0] or "Bilinmiyor",
                     "client_ip": r[1],
                     "watch_count": r[2],
-                    "first_watched": r[3].isoformat() if r[3] else None,
-                    "last_watched": r[4].isoformat() if r[4] else None,
+                    "first_watched": r[3],
+                    "last_watched": r[4],
                 }
                 for r in client_breakdown
             ],
@@ -379,7 +391,7 @@ class LogService(ILogService):
                 {
                     "hostname": w.client_hostname or "Bilinmiyor",
                     "client_ip": w.client_ip,
-                    "timestamp": w.timestamp.isoformat() if w.timestamp else None,
+                    "timestamp": w.timestamp,
                 }
                 for w in recent_watches
             ],
@@ -472,8 +484,8 @@ class LogService(ILogService):
                 "total_logs": r[2],
                 "youtube_count": r[3],
                 "page_visit_count": r[4],
-                "last_seen": r[5].isoformat() if r[5] else None,
-                "first_seen": r[6].isoformat() if r[6] else None,
+                "last_seen": r[5],
+                "first_seen": r[6],
                 "is_online": r[5] >= since_30min if r[5] else False,
             }
             for r in results
@@ -515,7 +527,7 @@ class LogService(ILogService):
                 "title": r[1] or "Başlıksız",
                 "channel_name": r[2] or "Bilinmeyen Kanal",
                 "count": r[3],
-                "last_watched": r[4].isoformat() if r[4] else None,
+                "last_watched": r[4],
             }
             for r in results
         ]

@@ -168,6 +168,15 @@ def logs():
     )
 
 
+@admin_bp.route("/logs/clear", methods=["POST"])
+@login_required
+def clear_all_logs():
+    """Clear all log entries."""
+    count = _log_service.delete_all_logs()
+    flash(f"Tüm log kayıtları başarıyla silindi ({count} kayıt).", "success")
+    return redirect(url_for("admin.logs"))
+
+
 # ── Blocklist ─────────────────────────────────────────────────────────
 
 @admin_bp.route("/blocklist")
@@ -405,6 +414,15 @@ def client_detail(hostname):
         top_sites=top_sites,
         filters={"log_type": log_type, "date_from": date_from, "date_to": date_to},
     )
+
+
+@admin_bp.route("/client/<path:hostname>/clear", methods=["POST"])
+@login_required
+def clear_client_logs(hostname):
+    """Clear logs for a specific client."""
+    count = _log_service.delete_client_logs(hostname)
+    flash(f"{hostname} cihazına ait {count} log kaydı silindi.", "success")
+    return redirect(url_for("admin.client_detail", hostname=hostname))
 
 
 # ── Video Detail ──────────────────────────────────────────────────────

@@ -215,7 +215,7 @@
         </div>
 
         <div class="client-card-footer">
-            <span><i class="fas fa-clock"></i> Son görülme: {{ client.last_seen[:16] if client.last_seen else 'Bilinmiyor' }}</span>
+            <span><i class="fas fa-clock"></i> Son görülme: {{ (client.last_seen | to_local).strftime('%d.%m.%Y %H:%M') if client.last_seen else 'Bilinmiyor' }}</span>
             <i class="fas fa-chevron-right" style="opacity: 0.4;"></i>
         </div>
     </a>

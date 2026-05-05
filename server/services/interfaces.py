@@ -47,6 +47,16 @@ class ILogService(ABC):
         ...
 
     @abstractmethod
+    def delete_all_logs(self):
+        """Delete all log entries."""
+        ...
+
+    @abstractmethod
+    def delete_client_logs(self, hostname):
+        """Delete all log entries for a specific client hostname."""
+        ...
+
+    @abstractmethod
     def get_video_detail(self, video_id):
         """Get detailed info about a video: which clients watched it and when."""
         ...

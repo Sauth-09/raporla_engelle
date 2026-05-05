@@ -5,8 +5,12 @@ Creates and configures the Flask application with dependency injection.
 
 import os
 import logging
+from datetime import datetime, timedelta, timezone
 from flask import Flask
 from flask_cors import CORS
+
+# Server timezone offset (Turkey = UTC+3)
+_SERVER_TZ = timezone(timedelta(hours=3))
 
 # Configure logging so API debug messages are visible
 logging.basicConfig(
@@ -68,6 +72,17 @@ def create_app(config_name=None):
     # Initialize extensions
     db.init_app(app)
     CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+    # Register Jinja2 template filter to convert UTC → local time
+    @app.template_filter("to_local")
+    def _to_local_filter(dt_value):
+        """Convert a UTC datetime to the server's local timezone (Turkey UTC+3)."""
+        if dt_value is None:
+            return None
+        if dt_value.tzinfo is None:
+            # Treat naive datetimes as UTC
+            dt_value = dt_value.replace(tzinfo=timezone.utc)
+        return dt_value.astimezone(_SERVER_TZ)
 
     # Create services (dependency injection)
     log_service = LogService()

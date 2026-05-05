@@ -64,8 +64,12 @@ export class LogBuffer {
 
             await chrome.storage.local.set({ [this.STORAGE_KEY]: queue });
 
-            // Try immediate flush (non-blocking)
-            this.flush().catch(() => {});
+            // Only trigger immediate flush if we have accumulated enough logs.
+            // Otherwise, rely on the 1-minute alarm. This dramatically reduces
+            // network requests when many students are browsing simultaneously.
+            if (queue.length >= 10) {
+                this.flush().catch(() => {});
+            }
         } catch (error) {
             console.error('[NetKalkan] Error adding log:', error);
         }

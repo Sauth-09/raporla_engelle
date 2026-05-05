@@ -140,9 +140,14 @@
 
 <!-- Activity Log Table -->
 <div class="card" id="client-activity-card">
-    <div class="card-header">
-        <h3><i class="fas fa-history"></i> Aktivite Geçmişi</h3>
-        <span class="card-badge">{{ pagination.total }} kayıt</span>
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h3><i class="fas fa-history"></i> Aktivite Geçmişi</h3>
+            <span class="card-badge">{{ pagination.total }} kayıt</span>
+        </div>
+        <form method="POST" action="{{ url_for('admin.clear_client_logs', hostname=hostname) }}" onsubmit="return confirm('Bu cihaza ait tüm log kayıtlarını silmek istediğinize emin misiniz?');" style="margin: 0;">
+            <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Temizle</button>
+        </form>
     </div>
     <div class="card-body">
         <!-- Filters -->
@@ -188,8 +193,8 @@
                     {% for log in logs %}
                     <tr>
                         <td class="td-time">
-                            <span class="time-primary">{{ log.timestamp.strftime('%H:%M:%S') if log.timestamp else '-' }}</span>
-                            <span class="time-secondary">{{ log.timestamp.strftime('%d.%m.%Y') if log.timestamp else '' }}</span>
+                            <span class="time-primary">{{ (log.timestamp | to_local).strftime('%H:%M:%S') if log.timestamp else '-' }}</span>
+                            <span class="time-secondary">{{ (log.timestamp | to_local).strftime('%d.%m.%Y') if log.timestamp else '' }}</span>
                         </td>
                         <td>
                             {% if log.log_type == 'youtube_video' %}

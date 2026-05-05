@@ -225,8 +225,8 @@
                         <div class="watcher-name">{{ client.hostname }}</div>
                         <div class="watcher-meta">
                             {{ client.client_ip }}
-                            &middot; İlk: {{ client.first_watched[:16] if client.first_watched else '-' }}
-                            &middot; Son: {{ client.last_watched[:16] if client.last_watched else '-' }}
+                            &middot; İlk: {{ (client.first_watched | to_local).strftime('%d.%m.%Y %H:%M') if client.first_watched else '-' }}
+                            &middot; Son: {{ (client.last_watched | to_local).strftime('%d.%m.%Y %H:%M') if client.last_watched else '-' }}
                         </div>
                     </div>
                     <div class="watcher-count">
@@ -254,7 +254,7 @@
                 {% for watch in video.recent_watches %}
                 <div class="timeline-item">
                     <span class="timeline-dot"></span>
-                    <span class="timeline-time">{{ watch.timestamp[:19] | replace('T', ' ') if watch.timestamp else '-' }}</span>
+                    <span class="timeline-time">{{ (watch.timestamp | to_local).strftime('%d.%m.%Y %H:%M:%S') if watch.timestamp else '-' }}</span>
                     <span class="timeline-host">
                         <a href="{{ url_for('admin.client_detail', hostname=watch.hostname) }}" style="color: var(--text-primary);">
                             {{ watch.hostname }}
