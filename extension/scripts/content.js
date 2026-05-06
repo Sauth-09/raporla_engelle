@@ -31,14 +31,20 @@ const recentlyLogged = new Set();
 
 // 4. Listen for logging events from inject.js
 window.addEventListener('NetKalkanLogActivity', (event) => {
-    const logData = event.detail;
+    const raw = event.detail;
     
-    // Add current URL
-    logData.url = window.location.href;
-    logData.log_type = 'youtube_video';
+    // Map camelCase keys from inject.js → snake_case keys expected by the server API
+    const logData = {
+        url: window.location.href,
+        title: raw.title,
+        video_id: raw.videoId,
+        channel_name: raw.channelName,
+        channel_id: raw.channelId,
+        log_type: 'youtube_video'
+    };
     
-    if (logData.videoId) {
-        recentlyLogged.add(logData.videoId);
+    if (logData.video_id) {
+        recentlyLogged.add(logData.video_id);
         if (recentlyLogged.size > 50) recentlyLogged.clear();
     }
     
